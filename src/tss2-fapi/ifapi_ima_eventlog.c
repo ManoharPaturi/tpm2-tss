@@ -357,7 +357,14 @@ eventname_cb(UINT8       *digest,
     UNUSED(digest);
     UNUSED(jso);
 
-    size = strlen((const char *)&buffer[*offset]); // TODO check
+    if (template->event_size <= *offset) {
+        return_error(TSS2_FAPI_RC_BAD_VALUE, "Event name out of bounds.");
+    }
+    const char *nul = memchr(&buffer[*offset], '\0', template->event_size - *offset);
+    if (nul == NULL) {
+        return_error(TSS2_FAPI_RC_BAD_VALUE, "Event name not terminated.");
+    }
+    size = (size_t)(nul - (const char *)&buffer[*offset]);
     if (size > TCG_EVENT_NAME_LEN_MAX + 1) {
         return_error(TSS2_FAPI_RC_BAD_VALUE, "Too long event name.");
     }
